@@ -17,13 +17,13 @@ import plotly.express as px
 import seaborn as sns
 import streamlit as st
 from matplotlib.ticker import FuncFormatter
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine
 
 st.set_page_config(page_title="Turismo no Brasil · Dashboard", layout="wide")
 
 BASE = Path(__file__).parent
 CSV_PATH = BASE / "dados" / "simulacao_turismo_brasil.csv"
-DB_PATH = BASE / "database" / "turismo.db"
+DB_PATH = BASE / "database" / "turismo_dashboard.db"
 
 PRIMARY = "#1F4E79"
 ACCENT = "#E07A1F"
@@ -97,21 +97,25 @@ def preparar(df: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_resource
 def get_engine():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    return create_engine(f"sqlite:///{DB_PATH.as_posix()}")
+    """Cria o banco SQLite em database/. Se a pasta não puder ser gravada, usa um banco em memória."""
+    try:
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        engine = create_engine(f"sqlite:///{DB_PATH.as_posix()}")
+        with engine.begin() as con:
+            con.exec_driver_sql("CREATE TABLE IF NOT EXISTS _teste (x INTEGER)")
+            con.exec_driver_sql("DROP TABLE _teste")
+        return engine
+    except Exception:
+        from sqlalchemy.pool import StaticPool
+        return create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
 
 @st.cache_data(show_spinner="Carregando base de dados…")
 def carregar_base() -> pd.DataFrame:
-    """Lê a tabela `turismo` do SQLite; se o banco não existir ou estiver desatualizado, recria a partir do CSV."""
+    """Lê o CSV, faz o tratamento, grava a tabela `turismo` no SQLite e lê de volta do banco."""
     engine = get_engine()
-    esperadas = {"periodo", "inconsistente", "perc_estrangeiros", "faturamento_por_turista"}
-    colunas = set()
-    if "turismo" in inspect(engine).get_table_names():
-        colunas = {c["name"] for c in inspect(engine).get_columns("turismo")}
-    if not esperadas <= colunas:
-        bruto = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
-        preparar(bruto).to_sql("turismo", engine, if_exists="replace", index=False)
+    bruto = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
+    preparar(bruto).to_sql("turismo", engine, if_exists="replace", index=False)
     return pd.read_sql("SELECT * FROM turismo", engine, parse_dates=["data", "periodo"])
 
 
@@ -524,7 +528,7 @@ def pagina_tabela() -> None:
 def pagina_sql() -> None:
     df = CTX["df"]
     cabecalho("Consultas SQL", "Dados persistidos em banco SQLite com SQLAlchemy")
-    st.markdown("A base tratada é salva na tabela `turismo` do arquivo `database/turismo.db`. "
+    st.markdown("A base tratada é salva na tabela `turismo` do arquivo `database/turismo_dashboard.db`. "
                 "Escolha uma consulta pronta abaixo:")
 
     engine = get_engine()
