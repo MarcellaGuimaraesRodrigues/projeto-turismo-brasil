@@ -4,7 +4,6 @@ Projeto G1 · Linguagem de Programação — Análise e Visualização de Dados 
 
 **Aluna:** Marcella Guimarães Rodrigues da Silva  
 **Professor:** Alexandre Neves Louzada
-**Matéria:** Linguagens de Programação
 
 ## Links
 
