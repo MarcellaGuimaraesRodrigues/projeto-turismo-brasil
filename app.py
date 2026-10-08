@@ -218,7 +218,8 @@ Use os **filtros na barra lateral** — todos os KPIs, gráficos e interpretaç�
     c[1].metric("Região com maior faturamento", reg.index[0], bi(reg.iloc[0]), delta_color="off")
     c[2].metric("Turistas estrangeiros", pct(df["turistas_estrangeiros"].sum() / df["turistas"].sum() * 100),
                 "do total", delta_color="off")
-    c[3].metric("Eventos realizados", num(df["eventos_realizados"].sum()))
+    mov = df.groupby("regiao")["turistas"].sum().sort_values(ascending=False)
+    c[3].metric("Região mais movimentada", mov.index[0], f"{mil(mov.iloc[0])} turistas", delta_color="off")
 
     st.subheader("Evolução mensal do número de turistas")
     m = df.groupby("periodo", as_index=False)["turistas"].sum()
@@ -383,6 +384,19 @@ def pagina_destinos() -> None:
             f"enquanto **{cresc.index[-1]}** teve a maior queda ({pct(cresc.iloc[-1])})."
         )
 
+    st.subheader("Turistas x faturamento por cidade")
+    fig = px.scatter(por_cid.reset_index(), x="turistas", y="faturamento", hover_name="cidade",
+                     color_discrete_sequence=[ACCENT],
+                     labels={"turistas": "Total de turistas", "faturamento": "Faturamento (R$)"})
+    plotly_layout(fig)
+    fig.update_layout(hovermode="closest")
+    mostrar_plotly(fig)
+    r_tf = df["turistas"].corr(df["faturamento_turismo"])
+    interpretacao(
+        f"A correlação entre turistas e faturamento, registro a registro, é de **{num(r_tf, 2)}**.",
+        "Receber mais turistas não significa faturar mais nesta base: o faturamento depende pouco do volume de visitantes.",
+    )
+
     st.subheader("Ocupação hoteleira x turistas por cidade")
     fig = px.scatter(por_cid.reset_index(), x="turistas", y="ocupacao", hover_name="cidade",
                      size="faturamento", color_discrete_sequence=[PRIMARY],
@@ -473,6 +487,34 @@ def pagina_clima() -> None:
         "Ou seja, o clima não influencia o fluxo turístico nesta base. As demais variáveis também apresentam "
         "correlação próxima de zero com o número de turistas.",
     )
+
+
+def pagina_tabela() -> None:
+    df = CTX["df"]
+    cabecalho("Tabela dinâmica", "Monte o seu próprio resumo cruzando as dimensões da base")
+
+    dims = {"Região": "regiao", "Estado": "uf", "Cidade": "cidade", "Ano": "ano", "Mês": "mes",
+            "Nível de temporada": "nivel_temporada"}
+    medidas = {"Turistas": ("turistas", "sum"), "Turistas estrangeiros": ("turistas_estrangeiros", "sum"),
+               "Faturamento (R$)": ("faturamento_turismo", "sum"), "Ocupação hoteleira média (%)": ("ocupacao_hoteleira", "mean"),
+               "Gasto médio (R$)": ("gasto_medio", "mean"), "Eventos realizados": ("eventos_realizados", "sum")}
+    c = st.columns(3)
+    linhas = c[0].selectbox("Linhas", list(dims), index=0)
+    colunas = c[1].selectbox("Colunas", ["(nenhuma)"] + list(dims), index=4)
+    medida = c[2].selectbox("Medida", list(medidas), index=0)
+    col, agg = medidas[medida]
+
+    if colunas != "(nenhuma)" and dims[colunas] == dims[linhas]:
+        st.warning("Escolha dimensões diferentes para linhas e colunas.")
+        return
+    piv = df.pivot_table(index=dims[linhas], columns=None if colunas == "(nenhuma)" else dims[colunas],
+                         values=col, aggfunc=agg)
+    if colunas == "Mês":
+        piv = piv.rename(columns=MESES)
+    casas = 1 if agg == "mean" else 0
+    st.dataframe(piv.style.format(lambda v: num(v, casas)).background_gradient(cmap="Blues", axis=None),
+                 width="stretch")
+    st.download_button("Baixar tabela (CSV)", piv.to_csv().encode("utf-8"), "tabela_dinamica.csv", "text/csv")
 
 
 def pagina_sql() -> None:
@@ -592,6 +634,7 @@ def main() -> None:
         st.Page(pagina_destinos, title="Destinos turísticos", url_path="destinos"),
         st.Page(pagina_regioes, title="Regiões e mapa", url_path="regioes"),
         st.Page(pagina_clima, title="Clima e correlação", url_path="clima"),
+        st.Page(pagina_tabela, title="Tabela dinâmica", url_path="tabela"),
         st.Page(pagina_sql, title="Consultas SQL", url_path="sql"),
         st.Page(pagina_conclusao, title="Conclusão executiva", url_path="conclusao"),
     ]
