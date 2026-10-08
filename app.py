@@ -103,9 +103,13 @@ def get_engine():
 
 @st.cache_data(show_spinner="Carregando base de dados…")
 def carregar_base() -> pd.DataFrame:
-    """Lê a tabela `turismo` do SQLite; se o banco não existir, cria a partir do CSV."""
+    """Lê a tabela `turismo` do SQLite; se o banco não existir ou estiver desatualizado, recria a partir do CSV."""
     engine = get_engine()
-    if "turismo" not in inspect(engine).get_table_names():
+    esperadas = {"periodo", "inconsistente", "perc_estrangeiros", "faturamento_por_turista"}
+    colunas = set()
+    if "turismo" in inspect(engine).get_table_names():
+        colunas = {c["name"] for c in inspect(engine).get_columns("turismo")}
+    if not esperadas <= colunas:
         bruto = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
         preparar(bruto).to_sql("turismo", engine, if_exists="replace", index=False)
     return pd.read_sql("SELECT * FROM turismo", engine, parse_dates=["data", "periodo"])
