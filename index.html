@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turismo no Brasil · Análise e Visualização de Dados</title>
+<meta name="description" content="Projeto de análise e visualização de dados com Python: turismo no Brasil (2015–2024).">
+<style>
+  :root {
+    --azul: #1F4E79; --laranja: #E07A1F; --fundo: #F5F7FA; --texto: #1d2733;
+    --suave: #5b6b7c; --borda: #dde3ea; --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+         color: var(--texto); background: var(--fundo); line-height: 1.65; }
+  header { background: linear-gradient(135deg, #17395a, var(--azul)); color: #fff; padding: 56px 20px 48px; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 20px; }
+  header .wrap { padding: 0; }
+  header h1 { margin: 0 0 10px; font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.2; }
+  header p { margin: 0; max-width: 720px; color: #dbe7f3; font-size: 1.08rem; }
+  header .meta { margin-top: 18px; font-size: .92rem; color: #b9cde0; }
+  main { padding: 8px 0 40px; }
+  section { margin: 36px 0; }
+  h2 { font-size: 1.45rem; margin: 0 0 14px; color: var(--azul); }
+  h2::after { content: ""; display: block; width: 44px; height: 3px; background: var(--laranja); margin-top: 6px; border-radius: 2px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+  .kpi { background: var(--card); border: 1px solid var(--borda); border-radius: 12px; padding: 16px 18px; }
+  .kpi small { display: block; color: var(--suave); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi strong { display: block; font-size: 1.55rem; color: var(--azul); margin: 2px 0; }
+  .kpi span { color: var(--suave); font-size: .88rem; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: 12px; padding: 18px; }
+  .card h3 { margin: 0 0 6px; font-size: 1.02rem; }
+  .card p { color: var(--suave); font-size: .93rem; margin-bottom: 10px; }
+  .btn { display: inline-block; padding: 9px 16px; border-radius: 8px; background: var(--azul); color: #fff;
+         text-decoration: none; font-weight: 600; font-size: .93rem; }
+  .btn:hover { background: #163b5c; }
+  .btn.sec { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
+  .btn.sec:hover { background: #eef3f8; }
+  .cta { background: var(--card); border: 2px solid var(--laranja); border-radius: 14px; padding: 26px; text-align: center; }
+  .cta .btn { background: var(--laranja); font-size: 1.05rem; padding: 12px 24px; }
+  .cta .btn:hover { background: #c7690f; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+  .tags li { background: #e8eef5; color: var(--azul); border-radius: 999px; padding: 4px 14px; font-size: .9rem; margin: 0; font-weight: 600; }
+  figure { margin: 0 0 22px; background: var(--card); border: 1px solid var(--borda); border-radius: 12px; padding: 14px; }
+  figure img { width: 100%; height: auto; display: block; border-radius: 6px; }
+  figcaption { margin-top: 10px; font-size: .93rem; color: var(--suave); }
+  .achados li strong { color: var(--azul); }
+  .aviso { background: #fff7ec; border: 1px solid #f3d3a6; border-radius: 10px; padding: 14px 16px; font-size: .95rem; }
+  footer { border-top: 1px solid var(--borda); padding: 22px 0 40px; color: var(--suave); font-size: .9rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Turismo no Brasil (2015–2024)</h1>
+    <p>Análise e visualização de dados com Python sobre 4.440 registros de 37 cidades brasileiras: fluxo de turistas,
+       faturamento, ocupação hoteleira, sazonalidade, comparação regional e relação entre clima e turismo.</p>
+    <div class="meta">Projeto G1 · Linguagem de Programação — Análise e Visualização de Dados com Python · Tema 18<br>Aluna: Marcella Guimarães Rodrigues da Silva<br>Professor: Alexandre Neves Louzada</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <h2>Sobre o projeto</h2>
+    <p>O turismo é uma atividade econômica importante, que gera empregos, movimenta recursos e impulsiona o
+       desenvolvimento regional. Este projeto analisa uma base simulada do turismo brasileiro entre 2015 e 2024 em duas
+       partes: um <strong>notebook</strong> com a análise completa e um <strong>dashboard interativo em Streamlit</strong>
+       com filtros, KPIs, gráficos, mapa, consultas SQL, interpretação textual e conclusão executiva.</p>
+  </section>
+
+  <section>
+    <h2>Perguntas orientadoras</h2>
+    <ol>
+      <li>Quais cidades recebem mais turistas?</li>
+      <li>Existem períodos de alta temporada?</li>
+      <li>Quais regiões movimentam mais recursos?</li>
+      <li>Qual o impacto econômico do turismo?</li>
+      <li>Existem diferenças regionais relevantes?</li>
+      <li>Quais destinos apresentaram maior crescimento?</li>
+      <li>Como o turismo evoluiu ao longo do tempo?</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Indicadores principais (2015–2024)</h2>
+    <div class="kpis">
+      <div class="kpi"><small>Total de turistas</small><strong>1,14 bilhão</strong><span>4.440 registros</span></div>
+      <div class="kpi"><small>Faturamento total</small><strong>R$ 443,2 bi</strong><span>com turismo</span></div>
+      <div class="kpi"><small>Ocupação hoteleira média</small><strong>60,4%</strong><span>em todas as cidades</span></div>
+      <div class="kpi"><small>Gasto médio por turista</small><strong>R$ 675,71</strong><span>por visita</span></div>
+      <div class="kpi"><small>Cidade mais visitada</small><strong>Aparecida de Goiânia</strong><span>34,0 mi de turistas</span></div>
+      <div class="kpi"><small>Região com maior faturamento</small><strong>Sudeste</strong><span>34,9% do total</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Principais visualizações</h2>
+    <figure>
+      <img src="imagens/01_evolucao_temporal.png" alt="Turistas por mês com média móvel de 12 meses e turistas por ano" loading="lazy">
+      <figcaption><strong>Evolução temporal.</strong> O número de turistas se manteve estável, entre 110,8 e 117,3 milhões por ano.
+        O ponto mais baixo foi 2020, ano da pandemia, com recuperação a partir de 2023.</figcaption>
+    </figure>
+    <figure>
+      <img src="imagens/02_destinos.png" alt="Top 10 cidades mais visitadas" loading="lazy">
+      <figcaption><strong>Destinos.</strong> Aparecida de Goiânia lidera o ranking, à frente de São Paulo e Curitiba. A diferença entre
+        as dez primeiras cidades é pequena, o que mostra um fluxo bem distribuído.</figcaption>
+    </figure>
+    <figure>
+      <img src="imagens/03_regioes.png" alt="Faturamento total e faturamento por cidade em cada região" loading="lazy">
+      <figcaption><strong>Comparação regional.</strong> O Sudeste fatura mais porque tem mais cidades na base (13, contra 5 do Norte).
+        Por cidade, todas as regiões ficam em torno de R$ 12 bilhões.</figcaption>
+    </figure>
+    <figure>
+      <img src="imagens/04_sazonalidade.png" alt="Índice sazonal e heatmap de turistas por mês e ano" loading="lazy">
+      <figcaption><strong>Sazonalidade.</strong> Pico em junho e vale em abril, com amplitude de apenas 10 pontos percentuais:
+        não há uma alta temporada forte.</figcaption>
+    </figure>
+    <figure>
+      <img src="imagens/05_correlacao.png" alt="Dispersão entre temperatura e turistas e matriz de correlação" loading="lazy">
+      <figcaption><strong>Clima × turismo.</strong> A correlação entre temperatura e número de turistas é praticamente zero (−0,01):
+        o clima não influencia o fluxo turístico nesta base.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Principais achados</h2>
+    <ul class="achados">
+      <li><strong>Turismo estável:</strong> queda em 2020 e recuperação a partir de 2023, sem grandes variações.</li>
+      <li><strong>Sudeste lidera o faturamento</strong> por concentrar mais cidades turísticas, não por faturar mais em cada uma.</li>
+      <li><strong>Ranking surpreendente:</strong> destinos tradicionais como Rio de Janeiro e Salvador não lideram.</li>
+      <li><strong>Clima sem influência:</strong> temperatura, eventos e ocupação não se relacionam com o número de turistas.</li>
+      <li><strong>Dados corrigidos:</strong> 260 registros tinham mais turistas estrangeiros que o total e foram ajustados.</li>
+    </ul>
+    <p class="aviso"><strong>Atenção:</strong> a base é simulada. Os padrões são fracos por construção e o rótulo de temporada não
+       acompanha o movimento real de turistas; as conclusões devem ser validadas com dados reais.</p>
+  </section>
+
+  <section>
+    <h2>Conclusão executiva</h2>
+    <p>Entre 2015 e 2024, o Brasil recebeu cerca de 1,14 bilhão de turistas, que geraram R$ 443,2 bilhões em faturamento.
+       A região Sudeste é a que mais fatura, principalmente por concentrar o maior número de cidades turísticas. O clima não
+       influencia o fluxo de visitantes, e o ranking de cidades mais visitadas mostra que os destinos que as pessoas pensam
+       primeiro nem sempre são os que lideram.</p>
+  </section>
+
+  <section>
+    <h2>Tecnologias</h2>
+    <ul class="tags">
+      <li>Python</li><li>Pandas</li><li>NumPy</li><li>Matplotlib</li><li>Seaborn</li><li>Plotly</li>
+      <li>Streamlit</li><li>SQLAlchemy</li><li>SQLite</li><li>GitHub</li>
+    </ul>
+    <p>Funcionalidades avançadas: persistência em SQLite com SQLAlchemy, dashboard multipágina, mapa interativo com Plotly
+       e correlação estatística.</p>
+  </section>
+
+  <section>
+    <h2>Componentes do projeto</h2>
+    <div class="cards">
+      <div class="card"><h3>README</h3><p>Descrição, estrutura e instruções de execução.</p><a class="btn sec" data-link="readme" href="README.md">Ver README</a></div>
+      <div class="card"><h3>Notebook de análise</h3><p>Limpeza, engenharia de atributos, KPIs, gráficos e conclusão.</p><a class="btn sec" data-link="notebook" href="#">Ver notebook</a></div>
+      <div class="card"><h3>Código do dashboard</h3><p>Aplicação Streamlit com filtros, KPIs e gráficos.</p><a class="btn sec" data-link="app" href="#">Ver app.py</a></div>
+      <div class="card"><h3>Base de dados</h3><p>CSV simulado com 4.440 registros e 14 colunas.</p><a class="btn sec" href="dados/simulacao_turismo_brasil.csv" download>Baixar base de dados</a></div>
+      <div class="card"><h3>Repositório</h3><p>Código-fonte completo no GitHub.</p><a class="btn sec" data-link="repo" href="#">Abrir no GitHub</a></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="cta">
+      <h2 style="display:inline-block">Dashboard interativo</h2>
+      <p>Filtre por ano, mês, região, estado, cidade e nível de temporada e explore KPIs, gráficos, mapa e consultas SQL.</p>
+      <a class="btn" data-link="streamlit" href="#" target="_blank" rel="noopener">Acessar dashboard Streamlit</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">Projeto acadêmico de análise e visualização de dados · Dados simulados · 2015–2024</div>
+</footer>
+
+<script>
+  const repo = "https://github.com/MarcellaGuimaraesRodrigues/projeto-turismo-brasil";
+  const links = {
+    repo: repo,
+    readme: `${repo}#readme`,
+    notebook: `${repo}/blob/main/notebooks/analise_turismo.ipynb`,
+    app: `${repo}/blob/main/app.py`,
+    streamlit: "https://turismo-brasil-marcella.streamlit.app/"
+  };
+  document.querySelectorAll("[data-link]").forEach(a => { a.href = links[a.dataset.link]; });
+</script>
+</body>
+</html>
